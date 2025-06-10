@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FoodFlow</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="logo">FoodFlow</div>
+      <button class="sidebar-button active"><i class="fa-solid fa-box-open"></i> My Fridge</button>
+      <button class="add-item-button" id="sidebarAddBtn"><i class="fa-solid fa-plus"></i> Add Item</button>
+    </aside>
+
+    <main class="content">
+      <header>
+        <h1>FoodFlow</h1>
+        <p class="subtitle">Your smart food tracking system</p>
+      </header>
+
+      <div class="controls">
+        <div class="search-bar">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Search items...">
+        </div>
+        <button class="filter-button"><i class="fa-solid fa-filter"></i> Sort by Expiry</button>
+      </div>
+
+      <form id="addItemForm" class="add-form hidden">
+        <h2>Add New Item</h2>
+        <input type="text" id="name" placeholder="Item name" required>
+        <input type="text" id="category" placeholder="Category" required>
+        <input type="date" id="expiryDate" required>
+        <input type="number" id="quantity" placeholder="Quantity" required>
+        <input type="text" id="unit" placeholder="Unit (e.g., cups)" required>
+        <button type="submit" class="submit-item-button">Add Item</button>
+      </form>
+
+      <div class="food-grid"></div>
+
+      <div class="scan-section">
+        <h2>Scan Your Food</h2>
+        <p>Use our scanner to automatically add new items to your food inventory.</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
