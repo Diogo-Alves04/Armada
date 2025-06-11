@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function checkExpiringItems() {
         try {
-            const response = await fetch('/api/items'); 
+            const response = await fetch('https://armada-ribk.onrender.com/api/items'); 
             if (!response.ok) throw new Error('Failed to fetch items for notification check.');
             const foodItems = await response.json();
 

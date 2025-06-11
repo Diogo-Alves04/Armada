@@ -30,8 +30,7 @@ settings = Settings()
 # --- Flask App Setup ---
 app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app)
-
-# --- MongoDB Connection ---
+CORS(app, resources={r"/api/*": {"origins": "*"}, r"/photo_handler": {"origins": "*"}})# --- MongoDB Connection ---
 uri = os.environ.get("MONGODB_URI", "mongodb+srv://rafaelponzetto:gqfsBrwXCjkocXce@cluster0.i7cmk4l.mongodb.net/foodDB?retryWrites=true&w=majority&appName=Cluster0")
 client = MongoClient(uri)
 db = client["foodDB"]
