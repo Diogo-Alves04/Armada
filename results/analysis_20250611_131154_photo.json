@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-06-11T13:12:00.037911",
+  "items": [
+    {
+      "product": "Fanta",
+      "quantity": 1,
+      "expiration": 180
+    },
+    {
+      "product": "Coca-Cola",
+      "quantity": 1,
+      "expiration": 180
+    },
+    {
+      "product": "M&M's",
+      "quantity": 1,
+      "expiration": 14
+    }
+  ]
+}

@@ -51,21 +51,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
 # --- Configure Logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-"""
-# --- Expiration Estimates (in days) ---
-EXPIRATION_ESTIMATES = {
-    "milk": 7, "yogurt": 14, "cheese": 30, "butter": 30, "cream": 10,
-    "eggs": 28, "bread": 7, "muffin": 7, "cake": 7, "pasta": 365,
-    "rice": 365, "cereal": 180, "oats": 365, "flour": 180, "sugar": 90,
-    "apple": 30, "banana": 7, "orange": 21, "grapes": 14, "strawberry": 5,
-    "carrot": 30, "lettuce": 7, "tomato": 14, "potato": 30, "onion": 60,
-    "chicken": 2, "beef": 3, "pork": 3, "fish": 2, "shrimp": 2,
-    "water": 365, "juice": 90, "soda": 180, "beer": 180, "wine": 365,
-    "canned soup": 365, "canned beans": 365, "canned vegetables": 365,
-    "jam": 365, "peanut butter": 180, "honey": 730, "olive oil": 365,
-    "ketchup": 365, "mustard": 365, "mayonnaise": 90
-}
-"""
+
 # --- Helper Functions ---
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -444,6 +430,5 @@ def home():
     <p>Photos will be automatically analyzed by AI</p>
     """
 
-# --- Run the App ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
