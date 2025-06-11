@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # --- Flask App Setup ---
-app = Flask(__name__, template_folder='.', static_folder='static')
+app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app)
 
 # --- MongoDB Connection ---
@@ -41,8 +41,8 @@ collection = db["items"]
 UPLOAD_FOLDER = 'Uploads'
 RESULTS_FOLDER = 'results'
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(RESULTS_FOLDER, exist_ok=True)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
@@ -432,4 +432,4 @@ def home():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
