@@ -1,71 +1,65 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FoodFlow</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodFlow</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="app-layout">
-    <aside class="sidebar">
-      <div class="logo">FoodFlow</div>
-      <button class="sidebar-button active"><i class="fa-solid fa-box-open"></i> My Fridge</button>
-      <button class="add-item-button" id="sidebarAddBtn"><i class="fa-solid fa-plus"></i> Add Item</button>
-    </aside>
-
-    <main class="content">
-      <header>
-        <h1>FoodFlow</h1>
-        <p class="subtitle">Your smart food tracking system</p>
-      </header>
-
-      <div class="controls">
-        <div class="search-bar">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search items...">
-        </div>
-        <button class="filter-button"><i class="fa-solid fa-filter"></i> Sort by Expiry</button>
-      </div>
-
-      <form id="addItemForm" class="add-form hidden">
-        <h2>Add New Item</h2>
-        <input type="text" id="name" placeholder="Item name" required>
-        <input type="text" id="category" placeholder="Category" required>
-        <input type="date" id="expiryDate" required>
-        <input type="number" id="quantity" placeholder="Quantity" required>
-        <input type="text" id="unit" placeholder="Unit (e.g., cups)" required>
-        <button type="submit" class="submit-item-button">Add Item</button>
-      </form>
-
-      <div class="food-grid"></div>
-<!--
-      <div class="analysis-results">
-        <h2>Photo Analysis Results</h2>
-        <div class="upload-section">
-          <input type="file" id="photoUpload" accept="image/*" capture="environment">
-          <button id="uploadBtn">Analyze Photo</button>
-        </div>
-        <div class="results-grid"></div>
-      </div>
-      -->
-      <div class="analysis-results">
-        <h2>Photo Analyze</h2>
-        <div class="upload-section">
-          <input type="file" id="photoUpload" accept="image/*" capture="environment">
-          <button id="uploadBtn">Analyze Photo</button>
+    <div class="app-layout">
+        <div class="sidebar">
+            <div class="logo">FoodFlow</div>
+            <button class="sidebar-button active"><i class="fas fa-utensils"></i> My Fridge</button>
+            <button class="add-item-button" id="sidebarAddBtn"><i class="fas fa-plus"></i> Add Item</button>
         </div>
 
+        <div class="content">
+            <header>
+                <h1>FoodFlow</h1>
+                <p class="subtitle">Your smart food tracking system</p>
+            </header>
 
-      <div class="scan-section">
-        <h2>Scan Your Food</h2>
-        <p>Use our scanner to automatically add new items to your food inventory.</p>
-      </div>
-    </main>
-  </div>
+            <div class="controls">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search items...">
+                </div>
+                <button class="filter-button"><i class="fas fa-sort"></i> Sort by Expiry</button>
+            </div>
 
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
+            <div class="food-grid"></div>
+
+            <form id="addItemForm" class="add-form hidden">
+                <h2>Add New Item</h2>
+                <input type="text" id="name" placeholder="Item Name" required>
+                <input type="text" id="category" placeholder="Category (e.g., dairy, produce)" required>
+                <input type="date" id="expiryDate" required>
+                <input type="number" id="quantity" placeholder="Quantity" min="1" required>
+                <input type="text" id="unit" placeholder="Unit (e.g., units, kg, liters)" required>
+                <button type="submit" class="submit-item-button">Add Item</button>
+            </form>
+
+            <div class="recipe-section">
+                <div class="recipe-header">
+                    <h2>Recipe Suggestions</h2>
+                    <button id="refreshRecipeBtn" class="refresh-recipe-btn"><i class="fas fa-sync"></i> Refresh Recipe</button>
+                </div>
+                <p>Use your ingredients, especially those expiring soon, to create delicious meals!</p>
+            </div>
+
+            <div class="scan-section">
+                <h2>Scan Your Food</h2>
+                <p>Use our scanner to automatically add new items to your food inventory.</p>
+                <div class="upload-section">
+                    <input type="file" id="photoUpload" accept="image/*">
+                    <button id="uploadBtn" class="upload-btn">Analyze Photo</button>
+                </div>
+                <div class="results-grid"></div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
 </body>
 </html>
