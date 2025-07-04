@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadBtn = document.getElementById('uploadBtn');
     const photoUpload = document.getElementById('photoUpload');
     const resultsGrid = document.querySelector('.results-grid');
+    const recipeSection = document.querySelector('.recipe-section');
+    const refreshRecipeBtn = document.getElementById('refreshRecipeBtn');
 
     // State
     let notifiedItems = new Set();
@@ -22,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchFoodItems();
     setupNotificationCheck();
     fetchAnalysisResults();
+    fetchRecipeSuggestions();
 
     // Event Listeners
     sidebarAddBtn.addEventListener('click', () => {
@@ -53,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 addForm.reset();
                 addForm.classList.add('hidden');
                 fetchFoodItems(isSorted, searchInput.value);
+                fetchRecipeSuggestions();
                 showNotification('Item Added!', `${newItem.name} was successfully added.`, 'success');
             } else {
                 const errorData = await response.json();
@@ -74,6 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     uploadBtn.addEventListener('click', handlePhotoUpload);
+
+    refreshRecipeBtn.addEventListener('click', async () => {
+        showNotification('Processing', 'Generating new recipe...', 'warning');
+        await fetchRecipeSuggestions();
+    });
 
     // Core Functions
     async function fetchFoodItems(sorted = false, searchTerm = '') {
@@ -111,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.status === 'success' || result.status === 'partial_success') {
                 showNotification('Success', 'Photo analysis completed!', 'success');
                 fetchAnalysisResults();
+                fetchRecipeSuggestions();
             } else {
                 showNotification('Error', result.message || 'Failed to analyze photo', 'error');
             }
@@ -128,6 +138,79 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             showNotification('Error', 'Failed to load analysis results', 'error');
         }
+    }
+
+    async function fetchRecipeSuggestions() {
+        try {
+            const response = await fetch('/api/recipes');
+            if (!response.ok) throw new Error('Failed to fetch recipe suggestions');
+            const data = await response.json();
+            renderRecipeSuggestions(data);
+            showNotification('Success', 'Recipe suggestions updated!', 'success');
+        } catch (error) {
+            showNotification('Error', 'Failed to load recipe suggestions', 'error');
+        }
+    }
+
+    function renderRecipeSuggestions(data) {
+        recipeSection.innerHTML = '<div class="recipe-header"><h2>Recipe Suggestions</h2><button id="refreshRecipeBtn" class="refresh-recipe-btn"><i class="fas fa-sync"></i> Refresh Recipe</button></div>';
+        if (data.status === 'error' || !data.recipe) {
+            const noRecipe = document.createElement('p');
+            noRecipe.className = 'no-recipe';
+            noRecipe.textContent = 'No recipe suggestions available. Add items to your inventory!';
+            recipeSection.appendChild(noRecipe);
+            return;
+        }
+
+        const { recipe, used_items } = data;
+        const recipeCard = document.createElement('div');
+        recipeCard.className = 'recipe-card';
+
+        recipeCard.innerHTML = `
+            <h3>${recipe.title}</h3>
+            <div class="metadata">
+                <p><strong>Prep Time:</strong> ${recipe.prep_time} minutes</p>
+                <p><strong>Cook Time:</strong> ${recipe.cook_time} minutes</p>
+                <p><strong>Servings:</strong> ${recipe.servings}</p>
+            </div>
+            <h4 class="toggle-section" data-target="ingredients-list"><i class="fas fa-chevron-down"></i> Ingredients</h4>
+            <ul id="ingredients-list" class="active">
+                ${recipe.ingredients.map(ing => `<li>${ing}</li>`).join('')}
+            </ul>
+            <h4 class="toggle-section" data-target="instructions-list"><i class="fas fa-chevron-down"></i> Instructions</h4>
+            <ol id="instructions-list" class="active">
+                ${recipe.instructions.map(step => `<li>${step}</li>`).join('')}
+            </ol>
+            <h4 class="toggle-section" data-target="inventory-list"><i class="fas fa-chevron-down"></i> Based on Your Inventory</h4>
+            <ul id="inventory-list" class="active">
+                ${used_items.map(item => `
+                    <li class="inventory-item">
+                        ${item.name} (${item.quantity} ${item.unit}, Expires: ${formatExpiryText(item.expiryDate)})
+                        <span class="expiry ${getExpiryStatus(item.expiryDate)}"></span>
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+
+        recipeSection.appendChild(recipeCard);
+
+        // Add toggle functionality for collapsible sections
+        const toggleSections = recipeCard.querySelectorAll('.toggle-section');
+        toggleSections.forEach(section => {
+            section.addEventListener('click', () => {
+                const targetId = section.getAttribute('data-target');
+                const targetList = recipeCard.querySelector(`#${targetId}`);
+                targetList.classList.toggle('active');
+                section.classList.toggle('collapsed');
+            });
+        });
+
+        // Re-attach refresh button event listener
+        const newRefreshBtn = recipeSection.querySelector('#refreshRecipeBtn');
+        newRefreshBtn.addEventListener('click', async () => {
+            showNotification('Processing', 'Generating new recipe...', 'warning');
+            await fetchRecipeSuggestions();
+        });
     }
 
     function renderAnalysisResults(results) {
@@ -201,7 +284,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(newItem)
                 });
 
-                if (response.ok) addedCount++;
+                if (response.ok) {
+                    addedCount++;
+                    fetchRecipeSuggestions();
+                }
             }
             
             showNotification('Success', `Added ${addedCount} items to inventory`, 'success');
@@ -336,26 +422,33 @@ document.addEventListener('DOMContentLoaded', () => {
             expiryDiv.textContent = `Expires: ${formatExpiryText(item.expiryDate)}`;
             foodCard.appendChild(expiryDiv);
 
-            // Button Container
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'button-container';
 
-            // Remove One Button
             const deleteBtn = document.createElement('button');
             deleteBtn.classList.add('delete-btn');
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Remove One';
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Remove';
             deleteBtn.addEventListener('click', async () => {
-                const confirmAction = confirm(`Remove one unit of "${item.name}"? (Current quantity: ${item.quantity})`);
-                if (!confirmAction) return;
+                const quantityToRemove = prompt(`How many units of "${item.name}" to remove? (Current quantity: ${item.quantity})`, "1");
+                if (quantityToRemove === null) return; // User cancelled
+
+                const parsedQuantity = parseInt(quantityToRemove);
+                if (isNaN(parsedQuantity) || parsedQuantity < 1) {
+                    showNotification('Error', 'Please enter a valid number of units to remove.', 'error');
+                    return;
+                }
 
                 try {
                     const response = await fetch(`/api/items/${item._id}`, {
-                        method: 'DELETE'
+                        method: 'DELETE',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ quantity: parsedQuantity })
                     });
                     const result = await response.json();
                     if (response.ok) {
                         showNotification('Success', result.message, 'success');
                         fetchFoodItems(isSorted, searchInput.value);
+                        fetchRecipeSuggestions();
                     } else {
                         showNotification('Error', result.error || 'Failed to remove item.', 'error');
                     }
@@ -365,7 +458,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             buttonContainer.appendChild(deleteBtn);
 
-            // Add One Button
             const addBtn = document.createElement('button');
             addBtn.classList.add('add-btn');
             addBtn.innerHTML = '<i class="fas fa-plus"></i> Add One';
@@ -381,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (response.ok) {
                         showNotification('Success', result.message, 'success');
                         fetchFoodItems(isSorted, searchInput.value);
+                        fetchRecipeSuggestions();
                     } else {
                         showNotification('Error', result.error || 'Failed to add item.', 'error');
                     }
@@ -390,7 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             buttonContainer.appendChild(addBtn);
 
-            // Edit Expiry Button
             const editExpiryBtn = document.createElement('button');
             editExpiryBtn.classList.add('edit-expiry-btn');
             editExpiryBtn.innerHTML = '<i class="fas fa-calendar-alt"></i> Edit Expiry';
@@ -431,6 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (response.ok) {
                             showNotification('Success', result.message, 'success');
                             fetchFoodItems(isSorted, searchInput.value);
+                            fetchRecipeSuggestions();
                         } else {
                             showNotification('Error', result.error || 'Failed to update expiry date.', 'error');
                             expiryDiv.textContent = `Expires: ${formatExpiryText(item.expiryDate)}`;
