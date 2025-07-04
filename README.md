@@ -109,15 +109,15 @@ POST /photo_handler: Process a photo for AI analysis.
 
 Project Structure
 FoodFlow/
-├── app.py              # Flask backend and API logic
-├── Photo_handler.py    # Handles camera capture and photo processing
-├── static/
-│   ├── styles.css      # Styling for the web interface
-│   ├── script.js       # JavaScript for frontend functionality
-├── index.html          # Web interface HTML
-├── Uploads/            # Stores uploaded images
-├── results/            # Stores AI analysis results
-└── README.md           # Project documentation
+app.py              # Flask backend and API logic
+Photo_handler.py    # Handles camera capture and photo processing
+static/
+ styles.css      # Styling for the web interface
+ script.js       # JavaScript for frontend functionality
+index.html          # Web interface HTML
+Uploads/            # Stores uploaded images
+results/            # Stores AI analysis results
+README.md           # Project documentation
 
 Testing and Validation
 The system has been rigorously tested:
