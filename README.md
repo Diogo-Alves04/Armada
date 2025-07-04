@@ -17,7 +17,7 @@ Adriana (5572185): API key acquisition and documentation.
 Diogo (5548772): Raspberry Pi integration, database integration, coding, 3D printing, presentations, documentation.
 Andrei (5464234): Project video.
 
-Repository: https://github.com/Diogo-Alves04/FoodFlow
+Repository: https://github.com/Diogo-Alves04/Armada
 Prerequisites
 
 Hardware:
