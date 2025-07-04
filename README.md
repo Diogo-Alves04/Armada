@@ -3,9 +3,13 @@ FoodFlow AI is a university project developed by the ARMADA team at NHL Stenden 
 Key Features:
 
 Motion-triggered image capture to monitor fridge contents.
+
 AI-based item recognition using the Qwen model.
+
 MongoDB database for storing inventory data.
+
 Web interface for managing inventory and viewing recipe suggestions.
+
 Open-source and customizable to support sustainability goals.
 
 Team Members:
@@ -27,15 +31,21 @@ Prerequisites
 
 Hardware:
 Raspberry Pi Pico (or Raspberry Pi 4)
+
 PIR Motion Sensor (HC-SR501)
+
 8MP Camera Module (CSI interface)
+
 5V 3A power adapter
 
 
 Software:
 Python 3.8+
+
 Required Python packages: flask, pymongo, flask-cors, picamera2, requests
+
 MongoDB Atlas account for cloud database
+
 Nebius API key for Qwen AI model
 
 
@@ -43,37 +53,39 @@ Operating System: Raspberry Pi OS (Linux-based)
 
 Setup Instructions
 
+
 Hardware Setup:
 
 Connect the PIR sensor to GPIO 17 (Pin 11), 5V (Pin 2/4), and GND (Pin 6).
+
 Attach the camera module to the Raspberry Pi’s CSI interface.
+
 Power the Raspberry Pi using a 5V 3A USB-C adapter.
 
 
 Clone the Repository:
 git clone git@github.com:Diogo-Alves04/FoodFlow.git
+
 cd FoodFlow
 
 
 Install Software Dependencies:
 sudo apt update && sudo apt upgrade -y
+
 sudo apt install git python3-pip -y
+
 pip install flask pymongo flask-cors picamera2 requests
 
 
+
 Configure Environment Variables:
-
 Set the MongoDB connection string:export MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.mongodb.net/foodDB"
-
 
 Set the Nebius API key:export NEBIUS_API_KEY="<your-nebius-api-key>"
 
 
-
-
 Run the Application:
 python app.py
-
 
 Access the System:
 
