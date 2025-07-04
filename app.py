@@ -51,21 +51,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
 # --- Configure Logging ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-"""
-# --- Expiration Estimates (in days) ---
-EXPIRATION_ESTIMATES = {
-    "milk": 7, "yogurt": 14, "cheese": 30, "butter": 30, "cream": 10,
-    "eggs": 28, "bread": 7, "muffin": 7, "cake": 7, "pasta": 365,
-    "rice": 365, "cereal": 180, "oats": 365, "flour": 180, "sugar": 90,
-    "apple": 30, "banana": 7, "orange": 21, "grapes": 14, "strawberry": 5,
-    "carrot": 30, "lettuce": 7, "tomato": 14, "potato": 30, "onion": 60,
-    "chicken": 2, "beef": 3, "pork": 3, "fish": 2, "shrimp": 2,
-    "water": 365, "juice": 90, "soda": 180, "beer": 180, "wine": 365,
-    "canned soup": 365, "canned beans": 365, "canned vegetables": 365,
-    "jam": 365, "peanut butter": 180, "honey": 730, "olive oil": 365,
-    "ketchup": 365, "mustard": 365, "mayonnaise": 90
-}
-"""
+
 # --- Helper Functions ---
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -78,7 +64,6 @@ def serialize_item(item):
     return item
 
 def save_analysis_result(filename, analysis_data):
-    """Save analysis results to JSON file"""
     result_filename = f"analysis_{os.path.splitext(filename)[0]}.json"
     result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
     
@@ -92,7 +77,6 @@ def save_analysis_result(filename, analysis_data):
     return result_path
 
 def estimate_expiration(product_name: str) -> int:
-    """Estimate expiration in days based on product name"""
     product_name = product_name.lower().strip()
     for key in EXPIRATION_ESTIMATES:
         if key in product_name:
@@ -101,7 +85,6 @@ def estimate_expiration(product_name: str) -> int:
     return 14
 
 def analyze_image_with_AI(image_path: str) -> dict:
-    """Send image to AI for analysis"""
     try:
         client = OpenAI(
             base_url=settings.ai.base_url,
@@ -156,6 +139,56 @@ def analyze_image_with_AI(image_path: str) -> dict:
             
     except Exception as e:
         logger.error(f"AI analysis failed: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+def generate_recipe_with_AI(ingredients):
+    try:
+        client = OpenAI(
+            base_url=settings.ai.base_url,
+            api_key=settings.ai.api_key
+        )
+        
+        ingredient_list = ", ".join([f"{item['name']} ({item['quantity']} {item['unit']})" for item in ingredients])
+        prompt = f"""
+        You are a culinary expert. Based on the following ingredients available in my inventory: {ingredient_list},
+        suggest a recipe that prioritizes ingredients that are expiring soon. Provide the response in JSON format with the following structure:
+        {{
+            "title": "<recipe title>",
+            "ingredients": ["<ingredient with quantity and unit>", ...],
+            "instructions": ["<step 1>", "<step 2>", ...],
+            "prep_time": "<time in minutes>",
+            "cook_time": "<time in minutes>",
+            "servings": <number>
+        }}
+        Ensure the recipe is feasible with the given ingredients and includes at least one expiring item if provided.
+        """
+
+        response = client.chat.completions.create(
+            model=settings.ai.model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+        
+        try:
+            recipe = json.loads(response.choices[0].message.content)
+            return {
+                "status": "success",
+                "recipe": recipe
+            }
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON from AI for recipe: {str(e)}")
+            return {
+                "status": "error",
+                "message": "AI returned invalid JSON format for recipe"
+            }
+            
+    except Exception as e:
+        logger.error(f"Recipe generation failed: {str(e)}")
         return {
             "status": "error",
             "message": str(e)
@@ -250,7 +283,51 @@ def handle_photo():
             'message': f'Processing failed: {str(e)}'
         }), 500
 
-# --- API Routes ---
+# --- New Recipe API Route ---
+@app.route('/api/recipes', methods=['GET'])
+def get_recipe_suggestions():
+    try:
+        # Fetch items expiring soon (within 3 days)
+        now = datetime.now()
+        three_days_from_now = now + timedelta(days=3)
+        
+        expiring_items = list(collection.find({
+            "expiration_date": {"$lte": three_days_from_now}
+        }))
+        
+        # Fetch additional items if fewer than 3 expiring items
+        other_items = []
+        if len(expiring_items) < 3:
+            other_items = list(collection.find({
+                "expiration_date": {"$gt": three_days_from_now}
+            }).limit(3 - len(expiring_items)))
+        
+        all_items = expiring_items + other_items
+        if not all_items:
+            return jsonify({"message": "No items in inventory to base recipes on."}), 200
+        
+        serialized_items = [serialize_item(item) for item in all_items]
+        
+        # Generate recipe with AI
+        ai_result = generate_recipe_with_AI(serialized_items)
+        
+        if ai_result['status'] == 'error':
+            return jsonify({
+                'status': 'error',
+                'message': ai_result['message']
+            }), 500
+        
+        return jsonify({
+            'status': 'success',
+            'recipe': ai_result['recipe'],
+            'used_items': serialized_items
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error generating recipe: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# --- Existing API Routes ---
 @app.route('/api/items', methods=['GET'])
 def get_items():
     try:
@@ -318,14 +395,22 @@ def delete_item(id):
         if not item:
             return jsonify({"error": "Item not found."}), 404
 
-        if item['quantity'] > 1:
+        data = request.get_json() or {}
+        quantity_to_remove = int(data.get('quantity', 1))  # Default to 1 if not provided
+        if quantity_to_remove < 1:
+            return jsonify({"error": "Quantity to remove must be at least 1."}), 400
+        if quantity_to_remove > item['quantity']:
+            return jsonify({"error": f"Cannot remove {quantity_to_remove} units. Only {item['quantity']} available."}), 400
+
+        if item['quantity'] > quantity_to_remove:
+            updated_quantity = item['quantity'] - quantity_to_remove
             collection.update_one(
                 {"_id": ObjectId(id)},
-                {"$set": {"quantity": item['quantity'] - 1, "added_on": datetime.now()}}
+                {"$set": {"quantity": updated_quantity, "added_on": datetime.now()}}
             )
             updated_item = collection.find_one({"_id": ObjectId(id)})
             return jsonify({
-                "message": f"Quantity of {item['name']} reduced by 1",
+                "message": f"Removed {quantity_to_remove} unit(s) of {item['name']}",
                 "item": serialize_item(updated_item)
             }), 200
         else:
@@ -334,6 +419,8 @@ def delete_item(id):
                 return jsonify({"message": f"Item {item['name']} deleted successfully."}), 200
             else:
                 return jsonify({"error": "Item not found or already deleted."}), 404
+    except ValueError:
+        return jsonify({"error": "Invalid quantity format."}), 400
     except Exception as e:
         logger.error(f"Error processing item {id}: {e}")
         return jsonify({"error": str(e)}), 500
